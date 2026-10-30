@@ -14,6 +14,10 @@ A small Python research pipeline that scans public RSS feeds, screens climate-te
 6. Stores seen links in SQLite to avoid repeatedly processing the same story.
 7. Exports a rolling CSV and can append newly discovered items to Google Sheets.
 
+## Sample output
+
+See [`docs/sample_output.csv`](docs/sample_output.csv) for an example of the exported tracker from a real run.
+
 ## Example output fields
 
 | Field | Description |
@@ -49,7 +53,7 @@ source .venv/bin/activate
 
 **Windows PowerShell**
 ```powershell
-.venv\\Scripts\\Activate.ps1
+.venv\Scripts\Activate.ps1
 ```
 
 Install and run:
@@ -74,7 +78,7 @@ python climate_signal.py --days 14 --limit 25 --no-ai
 3. Add your key to `ANTHROPIC_API_KEY`.
 4. Set `ANTHROPIC_MODEL` to a model identifier currently available to your Anthropic account. The project does not hard-code a model identifier, since available model names can change. If the model is not configured, the script uses its built-in extractive summary.
 
-The script summarises only the headline and RSS description, not the full article. It caps Claude summaries at 10 per run by default to limit API usage:
+The script summarises only the headline and RSS description, not the full article. It caps Claude summaries at 10 per run by default to limit API usage; any further items use the built-in extractive summary. Change the cap with `--max-ai-summaries`:
 
 ```bash
 python climate_signal.py --days 30 --limit 40 --max-ai-summaries 10

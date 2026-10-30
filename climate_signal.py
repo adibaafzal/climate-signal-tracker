@@ -189,9 +189,13 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=40)
     parser.add_argument("--google-sheets", action="store_true")
     parser.add_argument("--no-ai", action="store_true")
+    parser.add_argument("--max-ai-summaries", type=int, default=10,
+                        help="Maximum number of Claude summaries per run (default: 10). Remaining items use the extractive summary.")
     args = parser.parse_args()
     if args.days < 1 or args.limit < 1:
         parser.error("--days and --limit must be positive")
+    if args.max_ai_summaries < 0:
+        parser.error("--max-ai-summaries cannot be negative")
     try:
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")
@@ -215,9 +219,14 @@ def main() -> int:
         db.close()
         return 2
     unique = {entry["url"]: entry for entry in new}
-    new_items = []
+    new_items, ai_used = [], 0
     for article in sorted(unique.values(), key=lambda x: x.get("published_at", ""), reverse=True)[:args.limit]:
-        summary = fallback_analysis(article["title"], article["description"], article) if args.no_ai else claude_summary(article["title"], article["description"], article)
+        use_ai = not args.no_ai and ai_used < args.max_ai_summaries
+        if use_ai:
+            summary = claude_summary(article["title"], article["description"], article)
+            ai_used += 1
+        else:
+            summary = fallback_analysis(article["title"], article["description"], article)
         article.update(summary)
         article.pop("description", None)
         if store_signal(db, article):
