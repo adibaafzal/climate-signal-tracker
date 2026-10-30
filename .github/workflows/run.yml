@@ -1,0 +1,32 @@
+name: Run Climate Signal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements-google.txt
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Run climate-tech scan
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python climate_signal.py --days 30 --limit 40 --google-sheets
+      - name: Upload CSV report
+        uses: actions/upload-artifact@v4
+        with:
+          name: climate-signals-${{ github.run_number }}
+          path: data/latest_signals.csv
+          if-no-files-found: error
