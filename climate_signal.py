@@ -36,7 +36,7 @@ AMOUNT = re.compile(r"(?:[$€£]\s?\d+(?:[.,]\d+)?\s?(?:bn|billion|m|million|k|
 def clean_text(value: str | None) -> str:
     if not value:
         return ""
-    value = re.sub(r"(?is)<(script|style).*?>.*?</\\1>", " ", value)
+    value = re.sub(r"(?is)<(script|style).*?>.*?</\1>", " ", value)
     value = re.sub(r"(?s)<[^>]+>", " ", value)
     return re.sub(r"\s+", " ", html.unescape(value)).strip()
 
@@ -59,7 +59,7 @@ def analyse_signal(title: str, description: str) -> dict[str, Any] | None:
 
 def fallback_analysis(title: str, description: str, signal: dict[str, Any]) -> dict[str, str]:
     text = description.strip() or title.strip()
-    summary = " ".join(re.split(r"(?<=[.!?])\\s+", text)[:2])[:420].strip() or title
+    summary = " ".join(re.split(r"(?<=[.!?])\s+", text)[:2])[:420].strip() or title
     funding = signal["signal_type"] == "Funding signal"
     relevance = ("Potential financing signal; verify the round size, investors, use of proceeds and traction."
                  if funding else "Potential company or commercial signal; verify customer traction, deployment and route to scale.")
@@ -127,15 +127,15 @@ def claude_summary(title: str, description: str, signal: dict[str, Any]) -> dict
     if not api_key or not model:
         return fallback_analysis(title, description, signal)
     prompt = ("Use only this headline and RSS description. Do not invent facts. Return JSON with string keys "
-              "summary, investment_relevance, verification_notes.\\nHeadline: " + title +
-              "\\nRSS description: " + description[:2500])
+              "summary, investment_relevance, verification_notes.\nHeadline: " + title +
+              "\nRSS description: " + description[:2500])
     try:
         response = requests.post("https://api.anthropic.com/v1/messages",
             headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
             json={"model": model, "max_tokens": 350, "messages": [{"role": "user", "content": prompt}]}, timeout=40)
         response.raise_for_status()
         blocks = [part.get("text", "") for part in response.json().get("content", []) if part.get("type") == "text"]
-        raw = "\\n".join(blocks).strip()
+        raw = "\n".join(blocks).strip()
         fence = chr(96) * 3
         raw = raw.removeprefix(fence + "json").removeprefix(fence).removesuffix(fence).strip()
         result = json.loads(raw)
